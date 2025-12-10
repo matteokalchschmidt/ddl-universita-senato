@@ -1,0 +1,42 @@
+name: Monitor DDL università
+
+on:
+  schedule:
+    # Ogni lunedì alle 06:00 UTC (~07:00/08:00 in Italia a seconda dell'ora legale)
+    - cron: "0 6 * * 1"
+  # Permette anche l'esecuzione manuale da GitHub (Actions -> Run workflow)
+  workflow_dispatch:
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # necessario per fare commit con GITHUB_TOKEN
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run scraper
+        run: |
+          python senato_scraper.py
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update DDL università (run automatico settimanale)"
+          file_pattern: |
+            output/ddl_universita_iter.json
+          # Se un giorno vuoi versionare anche i PDF, puoi aggiungere:
+          #   pdf/*.pdf
